@@ -1,0 +1,170 @@
+CREATE DATABASE pelu;
+USE pelu;
+
+-- Crear la tabla tipo_usuario
+CREATE TABLE tipo_usuarios (
+    tipo_usuarios_id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    descripcion TEXT
+);
+
+-- Crear la tabla usuario
+CREATE TABLE `usuario` (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    `username` varchar(50) NOT NULL,
+    `password` varchar(50) NOT NULL,
+    `tipo_usuarios_id` INT, -- Agregar la columna tipo_usuarios_id
+    FOREIGN KEY (tipo_usuarios_id) REFERENCES tipo_usuarios(tipo_usuarios_id) -- Referenciar correctamente la columna en tipo_usuarios
+);
+
+-- Insertar tipos de usuario
+INSERT INTO `tipo_usuarios` (nombre, descripcion) VALUES ('Estilista', 'Profesional de belleza');
+INSERT INTO `tipo_usuarios` (nombre, descripcion) VALUES ('Administrativo', 'Gestión de citas y pagos');
+
+-- Insertar usuarios
+INSERT INTO usuario (username, password, tipo_usuarios_id) VALUES
+('mian', '1234', 1),
+('dario', '1234', 2);
+
+SELECT * FROM usuario;
+SELECT usuario.username, tipo_usuarios.nombre AS tipo_usuario
+FROM usuario
+JOIN tipo_usuarios ON usuario.tipo_usuarios_id = tipo_usuarios.tipo_usuarios_id;
+
+-- Crear la tabla cliente
+CREATE TABLE cliente (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    dni VARCHAR(20) NOT NULL UNIQUE,
+    domicilio VARCHAR(255) NOT NULL
+);
+
+-- Crear la tabla servicio
+CREATE TABLE servicio (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(10, 2) NOT NULL
+);
+
+-- Crear la tabla cita
+CREATE TABLE cita (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    hora TIME NOT NULL,
+    cliente_id INT,
+    servicio_id INT,
+    usuario_id INT,
+    FOREIGN KEY (cliente_id) REFERENCES cliente(id),
+    FOREIGN KEY (servicio_id) REFERENCES servicio(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id)
+);
+
+-- Insertar valores en la tabla cliente
+INSERT INTO cliente (nombre, dni, domicilio) VALUES
+('Juan Pérez', '12345678A', 'Calle Falsa 123'),
+('María López', '87654321B', 'Avenida Siempreviva 742'),
+('Carlos García', '11223344C', 'Calle del Sol 456');
+
+-- Insertar servicios en la tabla servicio
+INSERT INTO servicio (nombre, descripcion, precio) VALUES
+('Corte de Pelo', 'Corte de pelo estándar para hombre o mujer', 25.00),
+('Tinte Capilar', 'Aplicación de tinte para cabello', 50.00),
+('Tratamiento Capilar', 'Tratamiento revitalizante para el cabello', 40.00);
+
+-- Insertar citas en la tabla cita
+INSERT INTO cita (fecha, hora, cliente_id, servicio_id, usuario_id) VALUES
+('2024-05-20', '10:00:00', 1, 1, 1),
+('2024-05-20', '12:00:00', 2, 2, 2),
+('2024-05-21', '15:00:00', 3, 3, 1);
+
+-- Consultar citas con detalles de cliente y servicio
+SELECT 
+    cita.fecha, 
+    cita.hora, 
+    cliente.nombre AS cliente, 
+    servicio.nombre AS servicio, 
+    servicio.precio,
+    usuario.username AS estilista
+FROM 
+    cita
+JOIN cliente ON cita.cliente_id = cliente.id
+JOIN servicio ON cita.servicio_id = servicio.id
+JOIN usuario ON cita.usuario_id = usuario.id;
+
+-- Crear la tabla producto (para la venta de productos en la peluquería)
+CREATE TABLE producto (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(10, 2) NOT NULL,
+    UNIQUE KEY (nombre)
+);
+
+-- Insertar productos en la tabla producto
+INSERT INTO producto (nombre, descripcion, precio) VALUES
+('Champú Revitalizante', 'Champú para revitalizar el cabello seco', 15.00),
+('Acondicionador Nutritivo', 'Acondicionador para cabellos frágiles', 20.00),
+('Mascarilla Capilar', 'Mascarilla para tratamiento intensivo del cabello', 30.00);
+
+-- Consultar productos
+SELECT * FROM producto;
+
+-- Crear la tabla inventario (para gestionar el inventario de productos)
+CREATE TABLE inventario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    producto_id INT,
+    cantidad INT NOT NULL,
+    fecha_ingreso DATE NOT NULL,
+    usuario_id INT, -- Aquí agregamos el campo usuario_id
+    FOREIGN KEY (producto_id) REFERENCES producto(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) 
+);
+
+-- Insertar inventario
+INSERT INTO inventario (producto_id, cantidad, fecha_ingreso, usuario_id) VALUES
+(1, 100, '2024-04-01', 1),
+(2, 50, '2024-04-10', 2),
+(3, 30, '2024-04-15', 1);
+
+-- Consultar inventario
+SELECT 
+    inventario.id AS id_inventario,
+    producto.nombre AS nombre_producto,
+    producto.descripcion AS descripcion_producto,
+    inventario.cantidad,
+    inventario.fecha_ingreso,
+    usuario.username AS encargado
+FROM 
+    inventario
+JOIN producto ON inventario.producto_id = producto.id
+JOIN usuario ON inventario.usuario_id = usuario.id;
+
+-- Crear la tabla pagos
+CREATE TABLE pago (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT,
+    cita_id INT,
+    monto DECIMAL(10, 2) NOT NULL,
+    fecha DATE NOT NULL,
+    FOREIGN KEY (cliente_id) REFERENCES cliente(id),
+    FOREIGN KEY (cita_id) REFERENCES cita(id)
+);
+
+-- Insertar pagos
+INSERT INTO pago (cliente_id, cita_id, monto, fecha) VALUES
+(1, 1, 25.00, '2024-05-20'),
+(2, 2, 50.00, '2024-05-20');
+
+-- Consultar pagos
+SELECT 
+    pago.id AS id_pago,
+    cliente.nombre AS cliente,
+    servicio.nombre AS servicio,
+    pago.monto,
+    pago.fecha
+FROM 
+    pago
+JOIN cliente ON pago.cliente_id = cliente.id
+JOIN cita ON pago.cita_id = cita.id
+JOIN servicio ON cita.servicio_id = servicio.id;
